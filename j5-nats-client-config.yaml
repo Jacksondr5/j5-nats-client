@@ -1,8 +1,8 @@
 name: Office Personal PC
 subscriptions:
-  - name: UPS Monitor
-    topic: ups.office
+  - name: Shutdown Monitor
     action: shutdown
+    subject: ups.office
   - name: Ping Pong
-    topic: ping
     action: pong
+    subject: ping

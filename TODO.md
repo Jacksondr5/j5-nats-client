@@ -19,9 +19,6 @@ Implement basic shutdown
 
 1. Use ansible to move the binary to the utility machine for testing
 1. implement basic shutdown and test it on the util machine
-
----
-
 1. add to the gitlab server (check if GL has any advanced shutdown things that need doing and do them if so)
 
 Connect the UPS watchers to the system
