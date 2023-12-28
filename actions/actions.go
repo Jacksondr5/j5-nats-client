@@ -21,6 +21,15 @@ func Shutdown(nc *nats.Conn, hostname string) {
 
 func ShutdownGitLab(nc *nats.Conn, hostname string) {
 	log.Println("Shutting down GitLab")
-	syscall.Exec("/usr/bin/gitlab-ctl", []string{"gitlab-ctl", "stop"}, []string{})
+	log.Println("Skipping GitLab shutdown for now")
+	// err := syscall.Exec("/usr/bin/gitlab-ctl", []string{"gitlab-ctl", "stop"}, []string{})
+	// log.Println("GitLab shutdown complete")
+	// if err != nil {
+	// 	log.Printf("Error shutting down GitLab")
+	// 	log.Println(err)
+	// 	panic(err)
+	// }
+
+	log.Println("GitLab shutdown complete")
 	Shutdown(nc, hostname)
 }
