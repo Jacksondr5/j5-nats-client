@@ -1,0 +1,8 @@
+name: Office Personal PC
+subscriptions:
+  - name: UPS Monitor
+    topic: ups.office
+    action: shutdown
+  - name: Ping Pong
+    topic: ping
+    action: pong
