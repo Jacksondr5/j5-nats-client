@@ -2,5 +2,6 @@ go 1.20
 
 use (
 	./j5-nats-client
-	./ups-watcher
+	./nats-common
+	./office-ups-watcher
 )

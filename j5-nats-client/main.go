@@ -5,7 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/jacksondr5/j5-nats-client/actions"
+	"github.com/jacksondr5/go-monorepo/j5-nats-client/actions"
+	natscommon "github.com/jacksondr5/go-monorepo/nats-common"
 	"github.com/nats-io/nats.go"
 	"gopkg.in/yaml.v3"
 )
@@ -38,7 +39,7 @@ func main() {
 		subscription := config.Subscriptions[i]
 		log.Printf("Setting up subscription for \"%s\" on topic \"%s\" with action \"%s\"", subscription.Name, subscription.Subject, subscription.Action)
 		nc.Subscribe(subscription.Subject, func(m *nats.Msg) {
-			logMessageReceived(m)
+			natscommon.LogMessageReceived(m)
 			log.Printf("Executing action \"%s\" in response to message on subject \"%s\"", subscription.Action, m.Subject)
 			switch subscription.Action {
 			case "pong":
@@ -61,9 +62,6 @@ func main() {
 	}
 }
 
-func logMessageReceived(m *nats.Msg) {
-	log.Printf("Received a message from subject %s: %s \n", m.Subject, string(m.Data))
-}
 
 func getHostname() string {
 	hostname, hostnameErr := os.Hostname()

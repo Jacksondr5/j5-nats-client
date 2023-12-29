@@ -1,11 +1,8 @@
-module github.com/jacksondr5/go-monorepo/j5-nats-client
+module github.com/jacksondr5/go-monorepo/nats-common
 
 go 1.20
 
-require (
-	github.com/nats-io/nats.go v1.31.0
-	gopkg.in/yaml.v3 v3.0.1
-)
+require github.com/nats-io/nats.go v1.31.0
 
 require (
 	github.com/klauspost/compress v1.17.0 // indirect
@@ -14,5 +11,3 @@ require (
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 )
-
-replace github.com/jacksondr5/go-monorepo/nats-common => ../nats-common
