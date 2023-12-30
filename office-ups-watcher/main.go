@@ -40,7 +40,17 @@ var tracker = Tracker{
 }
 
 func main() {
-	//TODO: Figure out where this exe logs to
+	// Open a file in ./ups-watcher.log directory with the current time as the name
+	// This will create a new file every time the program is run
+	// This is useful for debugging
+	// logFileName := fmt.Sprintf("./ups-watcher.log/%s", time.Now().Format("2006-01-02T15:04:05"))
+	// logFile, err := os.Create(logFileName)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer logFile.Close()
+	// log.SetOutput(logFile)
+	
 	log.Println("Starting UPS Watcher")
 	nc, _ := nats.Connect("nats://nats.k8s.j5:4222")
 	defer nc.Drain()
@@ -58,10 +68,27 @@ func main() {
 	})
 
 	log.Println("Subscription setup complete.  Polling battery status.")
+	badBatteryStatusCount := 0
+	isActive := false
+	sleepTime := 10 * time.Second
 	for {
-		batteryStatus := pollBatteryStatus();
+		batteryStatus, err := PollBatteryStatus();
+		if err != nil {
+			log.Println(err)
+			log.Println("Error polling battery status, trying again....")
+			badBatteryStatusCount++
+			if badBatteryStatusCount > 5 {
+				log.Println("Too many errors polling battery status, exiting.")
+				break
+			}
+			time.Sleep(sleepTime)
+			continue
+		}
 		log.Printf("Battery status: %#v", batteryStatus)
 		if batteryStatus.IsOnBattery && batteryStatus.Percent <= 95 {
+			log.Println("System is on battery.  Turning things off.")
+			sleepTime = 1 * time.Second
+			isActive = true
 			if !tracker.Group1Deactivated {
 				log.Println("Deactivating group 1")
 				nc.Publish("ups.office", []byte("group1"))
@@ -83,24 +110,21 @@ func main() {
 				ShutdownHass()
 				tracker.Group4Deactivated = true
 			}
-		} else {
+		} else if isActive && !batteryStatus.IsOnBattery && batteryStatus.Percent >= 95 {
 			// Exit
 			log.Println("Battery is charged.  Turning things back on.")
-			BringUpHass()
 			if !tracker.NasIsOff {
 				log.Println("NAS is not off, turning its dependents back on")
 				BringUpPiSwitch()
+			} else {
+				log.Println("NAS is off, not turning its dependents back on")
 			}
 			break
+		} else {
+			log.Println("Everything is normal")
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(sleepTime)
 	}
 }
 
 
-func pollBatteryStatus() BatteryStatus {
-	return BatteryStatus{
-		IsOnBattery: false,
-		Percent: 100,
-	}
-}
