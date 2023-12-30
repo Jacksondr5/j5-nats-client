@@ -5,13 +5,10 @@ import (
 	"time"
 
 	natscommon "github.com/jacksondr5/go-monorepo/nats-common"
+	"github.com/jacksondr5/go-monorepo/office-ups-watcher/battery"
 	"github.com/nats-io/nats.go"
 )
 
-type BatteryStatus struct {
-	IsOnBattery bool
-	Percent int
-}
 
 type Tracker struct {
 	GitLabPiIsOff bool
@@ -72,7 +69,7 @@ func main() {
 	isActive := false
 	sleepTime := 10 * time.Second
 	for {
-		batteryStatus, err := PollBatteryStatus();
+		batteryStatus, err := battery.PollBatteryStatus();
 		if err != nil {
 			log.Println(err)
 			log.Println("Error polling battery status, trying again....")

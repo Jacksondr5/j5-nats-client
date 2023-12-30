@@ -1,6 +1,10 @@
 package main
 
-import "log"
+import (
+	"log"
+
+	"github.com/jacksondr5/go-monorepo/office-ups-watcher/call"
+)
 
 func ShutdownHass() {
 	if tracker.HassPiIsOff {
@@ -8,7 +12,7 @@ func ShutdownHass() {
 		return
 	}
 	log.Println("Shutting down Home Assistant Pi")
-	err := CallHassService("hassio", "host_shutdown", "")
+	err := call.CallHassService("hassio", "host_shutdown", "")
 	if err != nil {
 		log.Printf("Error shutting down Home Assistant Pi")
 	} else {

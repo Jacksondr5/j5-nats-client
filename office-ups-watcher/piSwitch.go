@@ -1,6 +1,10 @@
 package main
 
-import "log"
+import (
+	"log"
+
+	"github.com/jacksondr5/go-monorepo/office-ups-watcher/call"
+)
 
 func BringUpPiSwitch() {
 	if !tracker.PiSwitchIsOff {
@@ -8,7 +12,7 @@ func BringUpPiSwitch() {
 		return
 	}
 	log.Println("Bringing up Pi Switch")
-	err := CallHassService("switch", "turn_on", "{\"entity_id\": \"switch.pi_switch_plug\"}")
+	err := call.CallHassService("switch", "turn_on", "{\"entity_id\": \"switch.pi_switch_plug\"}")
 	if err != nil {
 		log.Printf("Error bringing up Pi Switch")
 	} else {
@@ -23,7 +27,7 @@ func ShutdownPiSwitch() {
 		return
 	}
 	log.Println("Shutting down Pi Switch")
-	err := CallHassService("switch", "turn_off", "{\"entity_id\": \"switch.pi_switch_plug\"}")
+	err := call.CallHassService("switch", "turn_off", "{\"entity_id\": \"switch.pi_switch_plug\"}")
 	if err != nil {
 		log.Printf("Error shutting down Pi Switch")
 	} else {

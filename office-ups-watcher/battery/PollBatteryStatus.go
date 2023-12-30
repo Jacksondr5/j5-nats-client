@@ -1,4 +1,4 @@
-package main
+package battery
 
 import (
 	"errors"
@@ -7,6 +7,11 @@ import (
 	"strconv"
 	"strings"
 )
+
+type BatteryStatus struct {
+	IsOnBattery bool
+	Percent int
+}
 
 // Toggle this for testing
 const upscCmd = "upsc"

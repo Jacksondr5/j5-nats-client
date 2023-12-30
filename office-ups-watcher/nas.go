@@ -1,6 +1,10 @@
 package main
 
-import "log"
+import (
+	"log"
+
+	"github.com/jacksondr5/go-monorepo/office-ups-watcher/call"
+)
 
 
 func ShutdownNas() {
@@ -10,7 +14,7 @@ func ShutdownNas() {
 		return
 	}
 	log.Println("Shutting down NAS")
-	err := HttpPost(
+	err := call.HttpPost(
 		"http://nas.j5/api/v2.0/system/shutdown",
 		"",
 		"NAS shutdown",
