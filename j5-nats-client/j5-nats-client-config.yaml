@@ -6,3 +6,4 @@ subscriptions:
   - name: Ping Pong
     action: pong
     subject: ping
+    trigger: "group1"

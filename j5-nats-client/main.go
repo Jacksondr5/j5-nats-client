@@ -14,6 +14,7 @@ import (
 type Subscription struct {
 	Action string
 	Name string
+	Trigger string
 	Subject string
 }
 
@@ -37,10 +38,20 @@ func main() {
 	log.Println("Setting up subscriptions")
 	for i := range config.Subscriptions {
 		subscription := config.Subscriptions[i]
-		log.Printf("Setting up subscription for \"%s\" on topic \"%s\" with action \"%s\"", subscription.Name, subscription.Subject, subscription.Action)
+		log.Printf("Setting up subscription for \"%s\" on topic \"%s\" with action \"%s\" and trigger \"%s\"", subscription.Name, subscription.Subject, subscription.Action, subscription.Trigger)
 		nc.Subscribe(subscription.Subject, func(m *nats.Msg) {
 			natscommon.LogMessageReceived(m)
-			log.Printf("Executing action \"%s\" in response to message on subject \"%s\"", subscription.Action, m.Subject)
+			if subscription.Trigger != "" {
+				if string(m.Data) != subscription.Trigger {
+					log.Printf("Message \"%s\" on subject \"%s\" does not match trigger \"%s\".  Ignoring.", string(m.Data), m.Subject,  subscription.Trigger)
+					return
+				} else {
+					log.Printf("Message \"%s\" on subject \"%s\" matches trigger \"%s\"", string(m.Data), m.Subject,  subscription.Trigger)
+				}
+			} else {
+				log.Printf("No trigger message specified for subscription \"%s\".", subscription.Name)
+			}
+			log.Printf("Executing action \"%s\"", subscription.Action)
 			switch subscription.Action {
 			case "pong":
 				actions.Pong(nc, hostname)
