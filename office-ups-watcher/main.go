@@ -4,7 +4,6 @@ import (
 	"log"
 	"time"
 
-	natscommon "github.com/jacksondr5/go-monorepo/nats-common"
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/battery"
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/call"
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/devices"
@@ -12,7 +11,7 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-const totalK8sPis = 12
+
 
 func main() {
 	log.Println("Starting UPS Watcher")
@@ -21,7 +20,6 @@ func main() {
 	log.Println("Connected to NATS")
 
 	log.Println("Setting up subscriptions")
-	k8sPiCount := 0
 	var tracker = logic.Tracker{
 		BadBatteryStatusCount: 0,
 		Group1IsDeactivated: false,
@@ -48,14 +46,9 @@ func main() {
 			call.HttpClientImpl{},
 		),
 	}
+	k8sPiCount := 0
 	nc.Subscribe("ups.office.ack", func(m *nats.Msg) {
-		natscommon.LogMessageReceived(m)
-		log.Printf("Received ack from %s.  Total acks: %d", m.Reply, k8sPiCount)
-		k8sPiCount++
-		if k8sPiCount == totalK8sPis {
-			log.Println("All k8s pis have acked.  Shutting down Pi Switch")
-			logic.TurnOffDevice(devices.PiSwitch)
-		}
+		k8sPiCount = logic.OnShutdownAck(m, &devices, k8sPiCount)
 	})
 
 	log.Println("Subscription setup complete.  Polling battery status.")
