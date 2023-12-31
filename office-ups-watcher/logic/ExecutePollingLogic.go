@@ -35,14 +35,14 @@ type BatteryPoller interface {
 	PollBatteryStatus() (battery.BatteryStatus, error)
 }
 
-func ExecutePollingLogic(tracker *Tracker, nc NatsClient, devices *ManagedDevices, batteryPoller BatteryPoller) (time.Duration) {
+func ExecutePollingLogic(tracker *Tracker, k8sPiCount int, nc NatsClient, devices *ManagedDevices, batteryPoller BatteryPoller) (time.Duration, int) {
 	batteryStatus, err := batteryPoller.PollBatteryStatus();
 	sleepTime := 10 * time.Second
 	if err != nil {
 		log.Println(err)
 		log.Println("Error polling battery status, trying again....")
 		tracker.BadBatteryStatusCount++
-		return sleepTime
+		return sleepTime, k8sPiCount
 	}
 	log.Printf("Battery status: %#v", batteryStatus)
 	if batteryStatus.IsOnBattery && batteryStatus.Percent <= 95 {
@@ -67,6 +67,7 @@ func ExecutePollingLogic(tracker *Tracker, nc NatsClient, devices *ManagedDevice
 		if !devices.Nas.IsOff() {
 			log.Println("NAS is not off, turning its dependents back on")
 			TurnOnDevice(devices.PiSwitch)
+			k8sPiCount = 0
 		} else {
 			log.Println("NAS is off, not turning its dependents back on")
 		}
@@ -76,7 +77,7 @@ func ExecutePollingLogic(tracker *Tracker, nc NatsClient, devices *ManagedDevice
 	} else {
 		log.Println("Everything is normal")
 	}
-	return sleepTime
+	return sleepTime, k8sPiCount
 }
 
 func deactivateViaNats(nc NatsClient, subject string, data string, trackerFlag *bool) {

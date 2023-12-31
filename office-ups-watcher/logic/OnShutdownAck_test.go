@@ -34,13 +34,13 @@ func TestOnShutdownAck_AllPisAcked(t *testing.T) {
 	mockKillableDevice.On("TurnOff").Return(nil)
 	mockMessage := nats.NewMsg("subject")
 	mockMessage.Data = []byte("name")
-	k8sPisCount := 11
+	k8sPisCount := 10
 
 	// When
 	newPiCount := logic.OnShutdownAck(mockMessage, &logic.ManagedDevices{PiSwitch: mockKillableDevice}, k8sPisCount)
 
 	// Then
-	assert.Equal(t, 12, newPiCount)
+	assert.Equal(t, 11, newPiCount)
 	mockKillableDevice.AssertExpectations(t)
 }
 
@@ -53,12 +53,12 @@ func TestOnShutdownAck_MorePisThanExpectedAcked(t *testing.T) {
 	mockKillableDevice.On("TurnOff").Return(nil)
 	mockMessage := nats.NewMsg("subject")
 	mockMessage.Data = []byte("name")
-	k8sPisCount := 13
+	k8sPisCount := 12
 
 	// When
 	newPiCount := logic.OnShutdownAck(mockMessage, &logic.ManagedDevices{PiSwitch: mockKillableDevice}, k8sPisCount)
 
 	// Then
-	assert.Equal(t, 14, newPiCount)
+	assert.Equal(t, 13, newPiCount)
 	mockKillableDevice.AssertExpectations(t)
 }

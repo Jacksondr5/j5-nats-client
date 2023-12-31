@@ -54,7 +54,11 @@ func main() {
 	log.Println("Subscription setup complete.  Polling battery status.")
 
 	for {
-		sleepTime := logic.ExecutePollingLogic(&tracker, nc, &devices, battery.BatteryPollerImpl{})
+		sleepTime, newK8sPiCount := logic.ExecutePollingLogic(&tracker, k8sPiCount, nc, &devices, battery.BatteryPollerImpl{})
+		// I think theres a race condition here with the subscription and polling logic
+		if newK8sPiCount == 0 {
+			k8sPiCount = newK8sPiCount
+		}
 		if tracker.BadBatteryStatusCount > 5 {
 			log.Fatalln("Too many errors polling battery status, exiting.")
 		}

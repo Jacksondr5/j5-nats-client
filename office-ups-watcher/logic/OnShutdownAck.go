@@ -7,7 +7,7 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-const totalK8sPis = 12
+const totalK8sPis = 11
 
 func OnShutdownAck(m *nats.Msg, devices *ManagedDevices, k8sPiCount int) int {
 	natscommon.LogMessageReceived(m)
