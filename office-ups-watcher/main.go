@@ -61,7 +61,7 @@ func main() {
 	log.Println("Subscription setup complete.  Polling battery status.")
 
 	for {
-		sleepTime := logic.ExecuteLogic(&tracker, nc, &devices, battery.BatteryPollerImpl{})
+		sleepTime := logic.ExecutePollingLogic(&tracker, nc, &devices, battery.BatteryPollerImpl{})
 		if tracker.BadBatteryStatusCount > 5 {
 			log.Fatalln("Too many errors polling battery status, exiting.")
 		}

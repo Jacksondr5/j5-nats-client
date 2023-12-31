@@ -35,7 +35,7 @@ type BatteryPoller interface {
 	PollBatteryStatus() (battery.BatteryStatus, error)
 }
 
-func ExecuteLogic(tracker *Tracker, nc NatsClient, devices *ManagedDevices, batteryPoller BatteryPoller) (time.Duration) {
+func ExecutePollingLogic(tracker *Tracker, nc NatsClient, devices *ManagedDevices, batteryPoller BatteryPoller) (time.Duration) {
 	batteryStatus, err := batteryPoller.PollBatteryStatus();
 	sleepTime := 10 * time.Second
 	if err != nil {
