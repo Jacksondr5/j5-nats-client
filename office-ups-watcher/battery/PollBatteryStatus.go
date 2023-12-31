@@ -13,11 +13,13 @@ type BatteryStatus struct {
 	Percent int
 }
 
+type BatteryPollerImpl struct {}
+
 // Toggle this for testing
 const upscCmd = "upsc"
 // const upscCmd = "./upsc.sh"
 
-func PollBatteryStatus() (BatteryStatus, error) {
+func (bp BatteryPollerImpl) PollBatteryStatus() (BatteryStatus, error) {
 	charge, chargeErr := execCmd(upscCmd, "cyberpower@localhost","battery.charge")
 	status, statusErr := execCmd(upscCmd, "cyberpower@localhost","ups.status")
 	if chargeErr != nil || statusErr != nil {

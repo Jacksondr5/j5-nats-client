@@ -8,7 +8,9 @@ import (
 	"net/http"
 )
 
-func HttpPost(url string, bodyData string, requestName string, accessToken string) error {
+type HttpClientImpl struct {}
+
+func (h HttpClientImpl) Post(url string, bodyData string, requestName string, accessToken string) error {
 	request, err := http.NewRequest("POST", url, bytes.NewBufferString(bodyData))
 	if err != nil {
 		log.Printf("Error creating request for %s", requestName)
