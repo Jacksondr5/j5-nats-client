@@ -2,8 +2,8 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
-	"time"
 
 	"github.com/jacksondr5/go-monorepo/j5-nats-client/actions"
 	natscommon "github.com/jacksondr5/go-monorepo/nats-common"
@@ -31,14 +31,14 @@ func main() {
 
 	hostname = getHostname()
 	log.Println("Starting up")
-	nc, _ := nats.Connect("nats://nats.k8s.j5:4222")
+	nc, _ := nats.Connect("nats://nats.k8s.j5:4222", nats.Name(hostname))
 	defer nc.Drain()
 	log.Println("Connected to NATS")
 
 	log.Println("Setting up subscriptions")
 	for i := range config.Subscriptions {
 		subscription := config.Subscriptions[i]
-		log.Printf("Setting up subscription for \"%s\" on topic \"%s\" with action \"%s\" and trigger \"%s\"", subscription.Name, subscription.Subject, subscription.Action, subscription.Trigger)
+		log.Printf("Setting up subscription for \"%s\" on subject \"%s\" with action \"%s\" and trigger \"%s\"", subscription.Name, subscription.Subject, subscription.Action, subscription.Trigger)
 		nc.Subscribe(subscription.Subject, func(m *nats.Msg) {
 			natscommon.LogMessageReceived(m)
 			if subscription.Trigger != "" {
@@ -68,9 +68,7 @@ func main() {
 
 	log.Println("Subscription setup complete.  Waiting for events.")
 
-	for {
-		time.Sleep(1 * time.Second)
-	}
+	http.ListenAndServe(":12345", nil)
 }
 
 

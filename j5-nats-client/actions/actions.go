@@ -2,6 +2,8 @@ package actions
 
 import (
 	"log"
+	"os/exec"
+	"strings"
 	"syscall"
 
 	"github.com/nats-io/nats.go"
@@ -21,15 +23,18 @@ func Shutdown(nc *nats.Conn, hostname string) {
 
 func ShutdownGitLab(nc *nats.Conn, hostname string) {
 	log.Println("Shutting down GitLab")
-	log.Println("Skipping GitLab shutdown for now")
-	// err := syscall.Exec("/usr/bin/gitlab-ctl", []string{"gitlab-ctl", "stop"}, []string{})
-	// log.Println("GitLab shutdown complete")
-	// if err != nil {
-	// 	log.Printf("Error shutting down GitLab")
-	// 	log.Println(err)
-	// 	panic(err)
-	// }
+	cmd := exec.Command("gitlab-ctl", "graceful-kill")
+	var out strings.Builder
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		log.Printf("Error shutting down GitLab")
+		log.Println(err)
+		log.Printf("Shutting down system anyway")
+	} else {
+		log.Println("GitLab shutdown complete successfully")
+	}
+	log.Printf("GitLab shutdown stdout: %s", out.String())
 
-	log.Println("GitLab shutdown complete")
 	Shutdown(nc, hostname)
 }
