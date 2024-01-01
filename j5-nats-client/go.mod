@@ -7,6 +7,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
+require github.com/kardianos/service v1.2.2 // indirect
+
 require (
 	github.com/jacksondr5/go-monorepo/nats-common v0.0.0-00010101000000-000000000000
 	github.com/klauspost/compress v1.17.0 // indirect

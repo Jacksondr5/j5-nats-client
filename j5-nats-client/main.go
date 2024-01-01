@@ -1,96 +1,43 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"os"
-
-	"github.com/jacksondr5/go-monorepo/j5-nats-client/actions"
-	natscommon "github.com/jacksondr5/go-monorepo/nats-common"
-	"github.com/nats-io/nats.go"
-	"gopkg.in/yaml.v3"
+	"github.com/kardianos/service"
 )
 
-type Subscription struct {
-	Action string
-	Name string
-	Trigger string
-	Subject string
-}
+var logger service.Logger
 
-type Config struct {
-	Name string
-	Subscriptions []Subscription
-}
+type program struct{}
 
-var hostname string
+func (p *program) Start(s service.Service) error {
+	// Start should not block. Do the actual work async.
+	logger.Info("Starting up")
+	go p.run()
+	return nil
+}
+func (p *program) Stop(s service.Service) error {
+	// Stop should not block. Return with a few seconds.
+	logger.Info("Shutting down")
+	return nil
+}
 
 func main() {
-	config := ReadYamlFile("j5-nats-client-config.yaml")
-	log.Printf("%#v",config)
-
-	hostname = getHostname()
-	log.Println("Starting up")
-	nc, _ := nats.Connect("nats://nats.k8s.j5:4222", nats.Name(hostname))
-	defer nc.Drain()
-	log.Println("Connected to NATS")
-
-	log.Println("Setting up subscriptions")
-	for i := range config.Subscriptions {
-		subscription := config.Subscriptions[i]
-		log.Printf("Setting up subscription for \"%s\" on subject \"%s\" with action \"%s\" and trigger \"%s\"", subscription.Name, subscription.Subject, subscription.Action, subscription.Trigger)
-		nc.Subscribe(subscription.Subject, func(m *nats.Msg) {
-			natscommon.LogMessageReceived(m)
-			if subscription.Trigger != "" {
-				if string(m.Data) != subscription.Trigger {
-					log.Printf("Message \"%s\" on subject \"%s\" does not match trigger \"%s\".  Ignoring.", string(m.Data), m.Subject,  subscription.Trigger)
-					return
-				} else {
-					log.Printf("Message \"%s\" on subject \"%s\" matches trigger \"%s\"", string(m.Data), m.Subject,  subscription.Trigger)
-				}
-			} else {
-				log.Printf("No trigger message specified for subscription \"%s\".", subscription.Name)
-			}
-			log.Printf("Executing action \"%s\"", subscription.Action)
-			switch subscription.Action {
-			case "pong":
-				actions.Pong(nc, hostname)
-			case "shutdown":
-				actions.Shutdown(nc, hostname)
-			case "shutdown-gitlab":
-				actions.ShutdownGitLab(nc, hostname)
-			default:
-				log.Printf("Unknown action %s", subscription.Action)
-			}
-		})
+	svcConfig := &service.Config{
+		Name:        "j5-nats-client",
+		DisplayName: "J5 NATS Client",
+		Description: "This is a service that listens on NATS topics and responds to them.",
 	}
 
-
-	log.Println("Subscription setup complete.  Waiting for events.")
-
-	http.ListenAndServe(":12345", nil)
-}
-
-
-func getHostname() string {
-	hostname, hostnameErr := os.Hostname()
-	if hostnameErr != nil {
-		panic(hostnameErr)
-	}
-	return hostname
-}
-
-func ReadYamlFile(path string) *Config {
-	buf, err := os.ReadFile(path)
+	prg := &program{}
+	s, err := service.New(prg, svcConfig)
 	if err != nil {
-		panic(err)
+		logFatal(logger, err.Error())
 	}
-
-	var config Config
-	err = yaml.Unmarshal(buf, &config)
+	logger, err = s.Logger(nil)
 	if err != nil {
-		panic(err)
+		logFatal(logger, err.Error())
 	}
-
-	return &config
+	err = s.Run()
+	if err != nil {
+		logFatal(logger, err.Error())
+	}
 }

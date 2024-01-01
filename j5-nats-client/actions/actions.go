@@ -1,40 +1,40 @@
 package actions
 
 import (
-	"log"
 	"os/exec"
 	"strings"
 	"syscall"
 
+	"github.com/kardianos/service"
 	"github.com/nats-io/nats.go"
 )
 
-func Pong(nc *nats.Conn, hostname string) {
-	log.Println("Responding to ping")
+func Pong(nc *nats.Conn, logger service.Logger, hostname string) {
+	logger.Info("Responding to ping")
 	nc.Publish("pong", []byte(hostname))
 }
 
-func Shutdown(nc *nats.Conn, hostname string) {
-	log.Println("Shutting down system")
+func Shutdown(nc *nats.Conn, logger service.Logger, hostname string) {
+	logger.Info("Shutting down system")
 	nc.Publish("shutdown", []byte(hostname))
 	nc.Drain()
 	syscall.Exec("/sbin/shutdown", []string{"shutdown", "now"}, []string{})
 }
 
-func ShutdownGitLab(nc *nats.Conn, hostname string) {
-	log.Println("Shutting down GitLab")
+func ShutdownGitLab(nc *nats.Conn, logger service.Logger, hostname string) {
+	logger.Info("Shutting down GitLab")
 	cmd := exec.Command("gitlab-ctl", "graceful-kill")
 	var out strings.Builder
 	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
-		log.Printf("Error shutting down GitLab")
-		log.Println(err)
-		log.Printf("Shutting down system anyway")
+		logger.Info("Error shutting down GitLab")
+		logger.Info(err)
+		logger.Info("Shutting down system anyway")
 	} else {
-		log.Println("GitLab shutdown complete successfully")
+		logger.Info("GitLab shutdown complete successfully")
 	}
-	log.Printf("GitLab shutdown stdout: %s", out.String())
+	logger.Infof("GitLab shutdown stdout: %s", out.String())
 
-	Shutdown(nc, hostname)
+	Shutdown(nc, logger, hostname)
 }
