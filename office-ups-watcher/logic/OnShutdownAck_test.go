@@ -62,3 +62,19 @@ func TestOnShutdownAck_MorePisThanExpectedAcked(t *testing.T) {
 	assert.Equal(t, 13, newPiCount)
 	mockKillableDevice.AssertExpectations(t)
 }
+
+func TestOnShutdownAck_MultipleAcks(t *testing.T) {
+	// Given
+	mockKillableDevice := &logicTest.MockManageableDevice{}
+	mockKillableDevice.On("Name").Return("name")
+	mockMessage := nats.NewMsg("subject")
+	mockMessage.Data = []byte("name")
+	k8sPisCount := 1
+
+	// When
+	newPiCount := logic.OnShutdownAck(mockMessage, &logic.ManagedDevices{PiSwitch: mockKillableDevice}, k8sPisCount)
+	newPiCount = logic.OnShutdownAck(mockMessage, &logic.ManagedDevices{PiSwitch: mockKillableDevice}, newPiCount)
+
+	// Then
+	assert.Equal(t, 3, newPiCount)
+}

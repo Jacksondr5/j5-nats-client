@@ -50,10 +50,8 @@ func main() {
 		),
 	}
 	k8sPiCount := 0
-	k8sPiCountChan := make(chan int)
 	nc.Subscribe("ups.office.ack", func(m *nats.Msg) {
 		k8sPiCount = logic.OnShutdownAck(m, &devices, k8sPiCount)
-		k8sPiCountChan <- k8sPiCount
 	})
 
 	log.Println("Subscription setup complete.  Polling battery status.")
