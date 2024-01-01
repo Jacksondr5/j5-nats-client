@@ -70,9 +70,11 @@ func (p *program) run() {
 			case "pong":
 				actions.Pong(nc, logger, hostname)
 			case "shutdown":
-				actions.Shutdown(nc, logger, hostname)
+				actions.ShutdownUbuntu(nc, logger, hostname, subscription.Subject)
+			case "shutdown-windows":
+				actions.ShutdownWindows(nc, logger, hostname, subscription.Subject)
 			case "shutdown-gitlab":
-				actions.ShutdownGitLab(nc, logger, hostname)
+				actions.ShutdownGitLabProcess(nc, logger, hostname, subscription.Subject)
 			default:
 				logger.Infof("Unknown action %s", subscription.Action)
 			}
