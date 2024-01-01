@@ -45,7 +45,11 @@ func (p *program) run() {
 
 	hostname = getHostname()
 	logger.Info("Starting up")
-	nc, _ := nats.Connect("nats://nats.k8s.j5:4222", nats.Name(hostname))
+	nc, err := nats.Connect("nats://nats.k8s.j5:4222", nats.Name(hostname))
+	if err != nil {
+		logger.Info("Error connecting to NATS")
+		logFatal(logger, err.Error())
+	}
 	defer nc.Drain()
 	logger.Info("Connected to NATS")
 
@@ -53,7 +57,7 @@ func (p *program) run() {
 	for i := range config.Subscriptions {
 		subscription := config.Subscriptions[i]
 		logger.Infof("Setting up subscription for \"%s\" on subject \"%s\" with action \"%s\" and trigger \"%s\"", subscription.Name, subscription.Subject, subscription.Action, subscription.Trigger)
-		nc.Subscribe(subscription.Subject, func(m *nats.Msg) {
+		_, err := nc.Subscribe(subscription.Subject, func(m *nats.Msg) {
 			natscommon.LogMessageReceived(m)
 			if subscription.Trigger != "" {
 				if string(m.Data) != subscription.Trigger {
@@ -79,10 +83,19 @@ func (p *program) run() {
 				logger.Infof("Unknown action %s", subscription.Action)
 			}
 		})
+		if err != nil {
+			logger.Info("Error setting up subscription")
+			logFatal(logger, err.Error())
+		}
 	}
 
-
-	logger.Info("Subscription setup complete.  Waiting for events.")
+	logger.Info("Subscription setup complete.  Posting startup message.")
+	err = nc.Publish("startup", []byte(hostname))
+	if err != nil {
+		logger.Info("Error publishing startup message")
+		logFatal(logger, err.Error())
+	}
+	logger.Info("Setup complete.  Waiting for events.")
 
 	http.ListenAndServe(":12345", nil)
 }

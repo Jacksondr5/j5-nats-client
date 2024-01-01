@@ -21,8 +21,8 @@ func ShutdownUbuntu(nc *nats.Conn, logger service.Logger, hostname string, subje
 		logger,
 		hostname,
 		subject,
-		"/sbin/shutdown", 
-		[]string{"shutdown", "now"},
+		"shutdown", 
+		[]string{"now"},
 	)
 }
 
