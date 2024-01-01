@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"net/http"
+	"os"
 	"time"
 
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/battery"
@@ -15,7 +17,8 @@ import (
 
 func main() {
 	log.Println("Starting UPS Watcher")
-	nc, _ := nats.Connect("nats://nats.k8s.j5:4222")
+	hostname := getHostname()
+	nc, _ := nats.Connect("nats://nats.k8s.j5:4222", nats.Name(hostname))
 	defer nc.Drain()
 	log.Println("Connected to NATS")
 
@@ -47,23 +50,34 @@ func main() {
 		),
 	}
 	k8sPiCount := 0
+	k8sPiCountChan := make(chan int)
 	nc.Subscribe("ups.office.ack", func(m *nats.Msg) {
 		k8sPiCount = logic.OnShutdownAck(m, &devices, k8sPiCount)
+		k8sPiCountChan <- k8sPiCount
 	})
 
 	log.Println("Subscription setup complete.  Polling battery status.")
 
+	go poll(&tracker, nc, &devices)
+	http.ListenAndServe(":12346", nil)
+}
+
+func poll(tracker *logic.Tracker, nc *nats.Conn, devices *logic.ManagedDevices) {
 	for {
-		sleepTime, newK8sPiCount := logic.ExecutePollingLogic(&tracker, k8sPiCount, nc, &devices, battery.BatteryPollerImpl{})
-		// I think theres a race condition here with the subscription and polling logic
-		if newK8sPiCount == 0 {
-			k8sPiCount = newK8sPiCount
-		}
-		if tracker.BadBatteryStatusCount > 5 {
-			log.Fatalln("Too many errors polling battery status, exiting.")
-		}
+		sleepTime := 10 * time.Second
+			sleepTime = logic.ExecutePollingLogic(tracker, nc, devices, battery.BatteryPollerImpl{})
+			// I think theres a race condition here with the subscription and polling logic
+			if tracker.BadBatteryStatusCount > 5 {
+				log.Fatalln("Too many errors polling battery status, exiting.")
+			}
 		time.Sleep(sleepTime)
 	}
 }
 
-
+func getHostname() string {
+	hostname, hostnameErr := os.Hostname()
+	if hostnameErr != nil {
+		panic(hostnameErr)
+	}
+	return hostname
+}

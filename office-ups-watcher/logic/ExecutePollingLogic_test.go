@@ -89,7 +89,7 @@ func TestExecuteLogic_BatteryJustTurnedOn(t *testing.T) {
 	tracker := &logic.Tracker{IsActive: false}
 	
 	// When
-	sleepTime, _ := logic.ExecutePollingLogic(tracker, 0, mockNatsConn, mockDevices, mockBattery)
+	sleepTime := logic.ExecutePollingLogic(tracker, mockNatsConn, mockDevices, mockBattery)
 	
 	// Then
 	assert.Equal(t, 1*time.Second, sleepTime)
@@ -104,7 +104,7 @@ func TestExecuteLogic_LinePowerIsOnButBatteryNotCharged(t *testing.T) {
 	tracker := &logic.Tracker{IsActive: true}
 
 	// When
-	sleepTime, _ := logic.ExecutePollingLogic(tracker, 0, nil, nil, getMockBatteryPoller(false, 70))
+	sleepTime := logic.ExecutePollingLogic(tracker, nil, nil, getMockBatteryPoller(false, 70))
 
 	// Then
 	assert.Equal(t, 10*time.Second, sleepTime)
@@ -120,11 +120,10 @@ func TestExecuteLogic_LinePowerIsOnAndBatteryChargedAndNasIsOn(t *testing.T) {
 	tracker := &logic.Tracker{IsActive: true}
 
 	// When
-	sleepTime, newK8sPiCount := logic.ExecutePollingLogic(tracker, 11, nil, mockDevices, getMockBatteryPoller(false, 100))
+	sleepTime := logic.ExecutePollingLogic(tracker, nil, mockDevices, getMockBatteryPoller(false, 100))
 
 	// Then
 	assert.Equal(t, 10*time.Second, sleepTime)
-	assert.Equal(t, 0, newK8sPiCount)
 	assert.False(t, tracker.IsActive)
 	mockPiSwitch.AssertExpectations(t)
 }
@@ -138,11 +137,10 @@ func TestExecuteLogic_LinePowerIsOnAndBatteryChargedAndNasIsOff(t *testing.T) {
 	tracker := &logic.Tracker{IsActive: true}
 
 	// When
-	sleepTime, newK8sPiCount := logic.ExecutePollingLogic(tracker, 11, nil, mockDevices, getMockBatteryPoller(false, 100))
+	sleepTime := logic.ExecutePollingLogic(tracker, nil, mockDevices, getMockBatteryPoller(false, 100))
 
 	// Then
 	assert.Equal(t, 10*time.Second, sleepTime)
-	assert.Equal(t, 11, newK8sPiCount)
 	assert.False(t, tracker.IsActive)
 	// Ensure nothing on the PiSwitch was called
 	mockPiSwitch.AssertExpectations(t)
@@ -153,7 +151,7 @@ func TestExecuteLogic_EverythingIsNormal(t *testing.T) {
 	tracker := &logic.Tracker{IsActive: false}
 
 	// When
-	sleepTime, _ := logic.ExecutePollingLogic(tracker, 0, nil, nil, getMockBatteryPoller(false, 70))
+	sleepTime := logic.ExecutePollingLogic(tracker, nil, nil, getMockBatteryPoller(false, 70))
 
 	// Then
 	assert.Equal(t, 10*time.Second, sleepTime)
@@ -166,7 +164,7 @@ func TestExecuteLogic_BatteryPercentageBelow95AndGroup1IsNotOff(t *testing.T) {
 	tracker := &logic.Tracker{IsActive: true}
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, 0, mockNatsConn, nil, getMockBatteryPoller(true, 94))
+	logic.ExecutePollingLogic(tracker, mockNatsConn, nil, getMockBatteryPoller(true, 94))
 	
 	// Then
 	assert.True(t, tracker.Group1IsDeactivated)
@@ -179,7 +177,7 @@ func TestExecuteLogic_BatteryPercentageBelow95AndGroup1IsAlreadyOff(t *testing.T
 	tracker := &logic.Tracker{IsActive: true, Group1IsDeactivated: true}
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, 0, mockNatsConn, nil, getMockBatteryPoller(true, 94))
+	logic.ExecutePollingLogic(tracker, mockNatsConn, nil, getMockBatteryPoller(true, 94))
 	
 	// Then
 	// Expect nothing to be called on the nats connection
@@ -192,7 +190,7 @@ func TestExecuteLogic_BatteryPercentageBelow85AndGroup2IsNotOff(t *testing.T) {
 	tracker := &logic.Tracker{IsActive: true, Group1IsDeactivated: true}
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, 0, mockNatsConn, nil, getMockBatteryPoller(true, 84))
+	logic.ExecutePollingLogic(tracker, mockNatsConn, nil, getMockBatteryPoller(true, 84))
 	
 	// Then
 	assert.True(t, tracker.Group2IsDeactivated)
@@ -205,7 +203,7 @@ func TestExecuteLogic_BatteryPercentageBelow85AndGroup2IsAlreadyOff(t *testing.T
 	tracker := &logic.Tracker{IsActive: true, Group1IsDeactivated: true, Group2IsDeactivated: true}
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, 0, mockNatsConn, nil, getMockBatteryPoller(true, 84))
+	logic.ExecutePollingLogic(tracker, mockNatsConn, nil, getMockBatteryPoller(true, 84))
 	
 	// Then
 	// Expect nothing to be called on the nats connection
@@ -221,7 +219,7 @@ func TestExecuteLogic_BatteryPercentageBelow40AndGroup3IsNotOff(t *testing.T) {
 	tracker := &logic.Tracker{IsActive: true, Group1IsDeactivated: true, Group2IsDeactivated: true}
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, 0, mockNatsConn, mockDevices, getMockBatteryPoller(true, 39))
+	logic.ExecutePollingLogic(tracker, mockNatsConn, mockDevices, getMockBatteryPoller(true, 39))
 	
 	// Then
 	assert.True(t, tracker.Group3IsDeactivated)
@@ -238,7 +236,7 @@ func TestExecuteLogic_BatteryPercentageBelow40AndGroup3IsAlreadyOff(t *testing.T
 	tracker := &logic.Tracker{IsActive: true, Group1IsDeactivated: true, Group2IsDeactivated: true, Group3IsDeactivated: true}
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, 0, mockNatsConn, mockDevices, getMockBatteryPoller(true, 39))
+	logic.ExecutePollingLogic(tracker, mockNatsConn, mockDevices, getMockBatteryPoller(true, 39))
 	
 	// Then
 	mockPiSwitch.AssertExpectations(t)
@@ -253,7 +251,7 @@ func TestExecuteLogic_GettingBatteryStatusFailed(t *testing.T) {
 	tracker := &logic.Tracker{IsActive: true, Group1IsDeactivated: true, Group2IsDeactivated: true, Group3IsDeactivated: true}
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, 0, nil, nil, mockBattery)
+	logic.ExecutePollingLogic(tracker, nil, nil, mockBattery)
 	
 	// Then
 	assert.Equal(t, 1, tracker.BadBatteryStatusCount)
@@ -291,7 +289,6 @@ func FuzzExecuteLogic(f *testing.F) {
 				Group2IsDeactivated: group2IsDeactivated,
 				Group3IsDeactivated: group3IsDeactivated,
 			}, 
-			0,
 			mockNatsConn, 
 			mockDevices, 
 			mockBattery,
