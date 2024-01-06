@@ -1,11 +1,14 @@
 package logic
 
 import (
-	"log"
+	"fmt"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/battery"
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/devices"
+	"github.com/jacksondr5/go-monorepo/office-ups-watcher/logger"
 )
 
 type Tracker struct {
@@ -39,14 +42,16 @@ func ExecutePollingLogic(tracker *Tracker, nc NatsClient, devices *ManagedDevice
 	batteryStatus, err := batteryPoller.PollBatteryStatus();
 	sleepTime := 10 * time.Second
 	if err != nil {
-		log.Println(err)
-		log.Println("Error polling battery status, trying again....")
+		logger.Error("Error polling battery status", err)
 		tracker.BadBatteryStatusCount++
 		return sleepTime
 	}
-	log.Printf("Battery status: %#v", batteryStatus)
+	logger.DebugWithFields("Battery status", log.Fields{
+		"isOnBattery": batteryStatus.IsOnBattery,
+		"percent": batteryStatus.Percent,
+	})
 	if batteryStatus.IsOnBattery && batteryStatus.Percent <= 95 {
-		log.Println("System is on battery.  Turning things off.")
+		logBatteryStatus("System is on battery.  Turning things off.", batteryStatus)
 		sleepTime = 1 * time.Second
 		tracker.IsActive = true
 		if !tracker.Group1IsDeactivated {
@@ -56,43 +61,47 @@ func ExecutePollingLogic(tracker *Tracker, nc NatsClient, devices *ManagedDevice
 			deactivateViaNats(nc, "ups.office", "group2", &tracker.Group2IsDeactivated)
 		}
 		if !tracker.Group3IsDeactivated && batteryStatus.Percent <= 40 {
-			log.Println("Deactivating group 3")
+			logger.Info("Deactivating group 3")
 			TurnOffDevice(devices.PiSwitch)
 			TurnOffDevice(devices.Nas)
 			tracker.Group3IsDeactivated = true
 		}
 	} else if tracker.IsActive && !batteryStatus.IsOnBattery && batteryStatus.Percent >= 95 {
-		// Exit
-		log.Println("Battery is charged.  Turning things back on.")
+		logBatteryStatus("Battery is charged.  Turning things back on.", batteryStatus)
 		tracker.Group1IsDeactivated = false
 		tracker.Group2IsDeactivated = false
 		tracker.Group3IsDeactivated = false
 		if !devices.Nas.IsOff() {
-			log.Println("NAS is not off, turning its dependents back on")
+			logger.Info("NAS is not off, turning its dependents back on")
 			TurnOnDevice(devices.PiSwitch)
 		} else {
-			log.Println("NAS is off, not turning its dependents back on")
+			logger.Info("NAS is off, not turning its dependents back on")
 		}
 		tracker.IsActive = false
 	} else if tracker.IsActive && !batteryStatus.IsOnBattery {
-		log.Println("System is on line power, but still charging battery.  Waiting for battery to charge.")
+		logBatteryStatus("System is on line power, but still charging battery.  Waiting for battery to charge.", batteryStatus)
 	} else {
-		log.Println("Everything is normal")
+		logger.Debug("Everything is normal")
 	}
 	return sleepTime
 }
 
 func deactivateViaNats(nc NatsClient, subject string, data string, trackerFlag *bool) {
-	log.Printf("Deactivating group %s", data)
+	logger.Info(fmt.Sprintf("Deactivating group %s", data))
 	err := nc.Publish(subject, []byte(data))
 	if err != nil {
 		if err.Error() == "nats: invalid connection" {
-			log.Println("Connection to nats is invalid, exiting")
-			log.Fatal(err)
+			logger.Fatal("Connection to nats is invalid, exiting", err)
 		}
-		log.Println("Error publishing to nats")
-		log.Println(err)
+		logger.Error("Error publishing to nats", err)
 		return
 	}
 	*trackerFlag = true
+}
+
+func logBatteryStatus(msg string, batteryStatus battery.BatteryStatus) {
+	logger.DebugWithFields(msg, log.Fields{
+		"isOnBattery": batteryStatus.IsOnBattery,
+		"percent": batteryStatus.Percent,
+	})
 }

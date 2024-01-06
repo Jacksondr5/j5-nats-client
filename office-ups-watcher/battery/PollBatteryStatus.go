@@ -2,10 +2,11 @@ package battery
 
 import (
 	"errors"
-	"log"
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/jacksondr5/go-monorepo/office-ups-watcher/logger"
 )
 
 type BatteryStatus struct {
@@ -20,11 +21,15 @@ const upscCmd = "upsc"
 // const upscCmd = "./upsc.sh"
 
 func (bp BatteryPollerImpl) PollBatteryStatus() (BatteryStatus, error) {
-	charge, chargeErr := execCmd(upscCmd, "cyberpower@localhost","battery.charge")
-	status, statusErr := execCmd(upscCmd, "cyberpower@localhost","ups.status")
+	charge, chargeErr := execCmd(upscCmd, "cyberpower@localhost", "battery.charge")
+	status, statusErr := execCmd(upscCmd, "cyberpower@localhost", "ups.status")
 	if chargeErr != nil || statusErr != nil {
-		log.Println(chargeErr)
-		log.Println(statusErr)
+		if chargeErr != nil {
+			logger.Error("error getting battery charge", chargeErr)
+		}
+		if statusErr != nil {
+			logger.Error("error getting battery status", statusErr)
+		}
 		return BatteryStatus{}, errors.New("error polling battery status")
 	}
 
@@ -55,7 +60,6 @@ func execCmd(name string, arg ...string) (string, error) {
 	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
-		log.Printf("Error running %s %s", name, arg)
 		return "", err
 	}
 	return out.String(), nil

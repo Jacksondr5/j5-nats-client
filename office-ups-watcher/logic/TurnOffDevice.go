@@ -1,9 +1,10 @@
 package logic
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/devices"
+	"github.com/jacksondr5/go-monorepo/office-ups-watcher/logger"
 )
 
 type KillableDevice interface {
@@ -12,16 +13,19 @@ type KillableDevice interface {
 }
 
 func TurnOffDevice (device KillableDevice) {
+	logFields := log.Fields{
+		"deviceName": device.Name(),
+	}
 	if device.IsOff() {	
-		log.Printf("%s is already off!", device.Name())
+		logger.WarningWithFields("Device is already off", logFields)
 		return
 	}
-	log.Printf("Shutting down %s", device.Name())
+	logger.InfoWithFields("Turning off device", logFields)
 	err := device.TurnOff()
 	if err != nil {
-		log.Printf("Error shutting down %s", device.Name())
+		logger.ErrorWithFields("Error turning off device", err, logFields)
 	} else {
-		log.Printf("%s shutdown complete", device.Name())
+		logger.InfoWithFields("Successfully turned device off", logFields)
 		device.SetIsOff(true)
 	}
 }

@@ -1,9 +1,10 @@
 package logic
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/devices"
+	"github.com/jacksondr5/go-monorepo/office-ups-watcher/logger"
 )
 
 type RaisableDevice interface {
@@ -12,16 +13,19 @@ type RaisableDevice interface {
 }
 
 func TurnOnDevice (device RaisableDevice) {
+	logFields := log.Fields{
+		"deviceName": device.Name(),
+	}
 	if !device.IsOff() {	
-		log.Printf("%s is already on!", device.Name())
+		logger.WarningWithFields("Device is already on", logFields)
 		return
 	}
-	log.Printf("Bringing up %s", device.Name())
+	logger.InfoWithFields("Turning on device", logFields)
 	err := device.TurnOn()
 	if err != nil {
-		log.Printf("Error bringing up %s", device.Name())
+		logger.ErrorWithFields("Error turning on device", err, logFields)
 	} else {
-		log.Printf("%s bring up complete", device.Name())
+		logger.InfoWithFields("Successfully turned device on", logFields)
 		device.SetIsOff(false)
 	}
 }
