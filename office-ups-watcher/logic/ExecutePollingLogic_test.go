@@ -99,6 +99,35 @@ func TestExecuteLogic_BatteryJustTurnedOn(t *testing.T) {
 	mockDevice.AssertExpectations(t)
 }
 
+func TestExecuteLogic_LinePowerCameBackOnAfterAShutdown(t *testing.T) {
+	// Given
+	mockBattery := getMockBatteryPoller(false, 100)
+	mockNatsConn := &mockNatsConn{}
+	mockDevice := &mockDevice{}
+	mockDevice.On("IsOff").Return(false)
+	mockDevice.On("Name").Return("name")
+	mockDevices := &logic.ManagedDevices{PiSwitch: mockDevice, Nas: mockDevice}
+	tracker := &logic.Tracker{
+		IsActive: true, 
+		Group1IsDeactivated: true, 
+		Group2IsDeactivated: true, 
+		Group3IsDeactivated: true,
+	}
+
+	// When
+	sleepTime := logic.ExecutePollingLogic(tracker, mockNatsConn, mockDevices, mockBattery)
+
+	// Then
+	assert.Equal(t, 10*time.Second, sleepTime)
+	assert.False(t, tracker.IsActive)
+	assert.False(t, tracker.Group1IsDeactivated)
+	assert.False(t, tracker.Group2IsDeactivated)
+	assert.False(t, tracker.Group3IsDeactivated)
+	mockBattery.AssertExpectations(t)
+	mockNatsConn.AssertExpectations(t)
+	mockDevice.AssertExpectations(t)
+}
+
 func TestExecuteLogic_LinePowerIsOnButBatteryNotCharged(t *testing.T) {
 	// Given
 	tracker := &logic.Tracker{IsActive: true}

@@ -18,7 +18,11 @@ import (
 func main() {
 	log.Println("Starting UPS Watcher")
 	hostname := getHostname()
-	nc, _ := nats.Connect("nats://nats.k8s.j5:4222", nats.Name(hostname))
+	nc, err := nats.Connect("nats://nats.k8s.j5:4222", nats.Name(hostname), nats.MaxReconnects(-1))
+	if err != nil {
+		log.Println("Error connecting to NATS")
+		log.Fatal(err.Error())
+	}
 	defer nc.Drain()
 	log.Println("Connected to NATS")
 
@@ -45,14 +49,18 @@ func main() {
 			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlNjkyMGRhMDc5NWU0ZThmOGUzYzYyOTAzYzgwZmE0NyIsImlhdCI6MTcwMzg4MjQ0OCwiZXhwIjoyMDE5MjQyNDQ4fQ.BWphYONMeYF2Z64N6uAhhqNIOG3D8FfE3RjSR9XgrtM", 
 			"http://hass.j5:8123/api/services/switch/turn_off", 
 			"http://hass.j5:8123/api/services/switch/turn_on", 
-			"{\"entity_id\": \"switch.pi_switch\"}",
+			"{\"entity_id\": \"switch.pi_switch_plug\"}",
 			call.HttpClientImpl{},
 		),
 	}
 	k8sPiCount := 0
-	nc.Subscribe("ups.office.ack", func(m *nats.Msg) {
+	_, err = nc.Subscribe("ups.office.ack", func(m *nats.Msg) {
 		k8sPiCount = logic.OnShutdownAck(m, &devices, k8sPiCount)
 	})
+	if err != nil {
+		log.Println("Error setting up subscription for \"ups.office.ack\"")
+		log.Fatal(err.Error())
+	}
 
 	log.Println("Subscription setup complete.  Polling battery status.")
 

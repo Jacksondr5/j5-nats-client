@@ -45,7 +45,7 @@ func (p *program) run() {
 
 	hostname = getHostname()
 	logger.Info("Starting up")
-	nc, err := nats.Connect("nats://nats.k8s.j5:4222", nats.Name(hostname))
+	nc, err := nats.Connect("nats://nats.k8s.j5:4222", nats.Name(hostname), nats.MaxReconnects(-1))
 	if err != nil {
 		logger.Info("Error connecting to NATS")
 		logFatal(logger, err.Error())

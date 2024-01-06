@@ -42,10 +42,11 @@ Get the nas and pi switch to shut down
    - What is the default state of the kasa switches? When power comes on, will they stay off or turn on?
 1. Implement the shutdown of the NAS and the pi switch
 
-Advanced use cases
+TOOD
 
-1. Rearrange the rack as described in the other doc
-
-later
-
-- can we run this on truenas or do we need to use their UPS tooling?
+- get the polling and subscription to sync on how many pis are acked. probably need to introduce a "version" in addition to the number of pis
+  - or take the "shut everything down" function into its own goroutine and have both the polling and subscription send updates via channels
+    - polling sends something when everything dies
+    - subscription sends something when it gets a message
+- wake on lan to start the nas back up when the power comes back on
+- figure out debug logging

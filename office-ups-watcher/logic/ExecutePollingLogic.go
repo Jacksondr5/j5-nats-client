@@ -64,6 +64,9 @@ func ExecutePollingLogic(tracker *Tracker, nc NatsClient, devices *ManagedDevice
 	} else if tracker.IsActive && !batteryStatus.IsOnBattery && batteryStatus.Percent >= 95 {
 		// Exit
 		log.Println("Battery is charged.  Turning things back on.")
+		tracker.Group1IsDeactivated = false
+		tracker.Group2IsDeactivated = false
+		tracker.Group3IsDeactivated = false
 		if !devices.Nas.IsOff() {
 			log.Println("NAS is not off, turning its dependents back on")
 			TurnOnDevice(devices.PiSwitch)
@@ -83,6 +86,10 @@ func deactivateViaNats(nc NatsClient, subject string, data string, trackerFlag *
 	log.Printf("Deactivating group %s", data)
 	err := nc.Publish(subject, []byte(data))
 	if err != nil {
+		if err.Error() == "nats: invalid connection" {
+			log.Println("Connection to nats is invalid, exiting")
+			log.Fatal(err)
+		}
 		log.Println("Error publishing to nats")
 		log.Println(err)
 		return
