@@ -58,23 +58,25 @@ func main() {
 		),
 	}
 
-	k8sPiCount := 0
+	actionFeed := make(chan logic.PiMonitorAction)
+	monitorChannel := make(chan int)
+	go logic.MonitorPiShutdown(actionFeed, monitorChannel, &devices, 12)
 	_, err = nc.Subscribe("ups.office.ack", func(m *nats.Msg) {
-		k8sPiCount = logic.OnShutdownAck(m, &devices, k8sPiCount)
+		logic.OnShutdownAck(m, actionFeed, monitorChannel)
 	})
 	if err != nil {
 		logger.Fatal("Error setting up subscription for \"ups.office.ack\"", err)
 	}
 
 	logger.Info("Subscription setup complete.  Polling battery status.")
-	go poll(&tracker, nc, &devices)
+	go poll(&tracker, nc, &devices, actionFeed)
 	http.ListenAndServe(":12346", nil)
 }
 
-func poll(tracker *logic.Tracker, nc *nats.Conn, devices *logic.ManagedDevices) {
+func poll(tracker *logic.Tracker, nc *nats.Conn, devices *logic.ManagedDevices, actionFeed chan<- logic.PiMonitorAction) {
 	for {
 		sleepTime := 10 * time.Second
-			sleepTime = logic.ExecutePollingLogic(tracker, nc, devices, battery.BatteryPollerImpl{})
+			sleepTime = logic.ExecutePollingLogic(tracker, nc, devices, battery.BatteryPollerImpl{}, actionFeed)
 			// I think theres a race condition here with the subscription and polling logic
 			if tracker.BadBatteryStatusCount > 5 {
 				logger.Fatal("Too many errors polling battery status, exiting.", nil)

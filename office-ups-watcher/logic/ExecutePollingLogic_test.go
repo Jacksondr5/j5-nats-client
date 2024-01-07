@@ -87,9 +87,10 @@ func TestExecuteLogic_BatteryJustTurnedOn(t *testing.T) {
 	mockDevice := &mockDevice{}
 	mockDevices := &logic.ManagedDevices{PiSwitch: mockDevice, Nas: mockDevice}
 	tracker := &logic.Tracker{IsActive: false}
+	mockAckChannel := make(chan logic.PiMonitorAction)
 	
 	// When
-	sleepTime := logic.ExecutePollingLogic(tracker, mockNatsConn, mockDevices, mockBattery)
+	sleepTime := logic.ExecutePollingLogic(tracker, mockNatsConn, mockDevices, mockBattery, mockAckChannel)
 	
 	// Then
 	assert.Equal(t, 1*time.Second, sleepTime)
@@ -113,9 +114,10 @@ func TestExecuteLogic_LinePowerCameBackOnAfterAShutdown(t *testing.T) {
 		Group2IsDeactivated: true, 
 		Group3IsDeactivated: true,
 	}
+	mockAckChannel := make(chan logic.PiMonitorAction)
 
 	// When
-	sleepTime := logic.ExecutePollingLogic(tracker, mockNatsConn, mockDevices, mockBattery)
+	sleepTime := logic.ExecutePollingLogic(tracker, mockNatsConn, mockDevices, mockBattery, mockAckChannel)
 
 	// Then
 	assert.Equal(t, 10*time.Second, sleepTime)
@@ -131,9 +133,10 @@ func TestExecuteLogic_LinePowerCameBackOnAfterAShutdown(t *testing.T) {
 func TestExecuteLogic_LinePowerIsOnButBatteryNotCharged(t *testing.T) {
 	// Given
 	tracker := &logic.Tracker{IsActive: true}
+	mockAckChannel := make(chan logic.PiMonitorAction)
 
 	// When
-	sleepTime := logic.ExecutePollingLogic(tracker, nil, nil, getMockBatteryPoller(false, 70))
+	sleepTime := logic.ExecutePollingLogic(tracker, nil, nil, getMockBatteryPoller(false, 70), mockAckChannel)
 
 	// Then
 	assert.Equal(t, 10*time.Second, sleepTime)
@@ -147,9 +150,10 @@ func TestExecuteLogic_LinePowerIsOnAndBatteryChargedAndNasIsOn(t *testing.T) {
 	mockPiSwitch :=  getMockDevice("pi switch", true, false, "TurnOn")
 	mockDevices := &logic.ManagedDevices{PiSwitch: mockPiSwitch, Nas: mockNas}
 	tracker := &logic.Tracker{IsActive: true}
+	mockAckChannel := make(chan logic.PiMonitorAction)
 
 	// When
-	sleepTime := logic.ExecutePollingLogic(tracker, nil, mockDevices, getMockBatteryPoller(false, 100))
+	sleepTime := logic.ExecutePollingLogic(tracker, nil, mockDevices, getMockBatteryPoller(false, 100), mockAckChannel)
 
 	// Then
 	assert.Equal(t, 10*time.Second, sleepTime)
@@ -164,9 +168,10 @@ func TestExecuteLogic_LinePowerIsOnAndBatteryChargedAndNasIsOff(t *testing.T) {
 	mockPiSwitch := &mockDevice{}
 	mockDevices := &logic.ManagedDevices{PiSwitch: mockPiSwitch, Nas: mockNas}
 	tracker := &logic.Tracker{IsActive: true}
+	mockAckChannel := make(chan logic.PiMonitorAction)
 
 	// When
-	sleepTime := logic.ExecutePollingLogic(tracker, nil, mockDevices, getMockBatteryPoller(false, 100))
+	sleepTime := logic.ExecutePollingLogic(tracker, nil, mockDevices, getMockBatteryPoller(false, 100), mockAckChannel)
 
 	// Then
 	assert.Equal(t, 10*time.Second, sleepTime)
@@ -178,9 +183,10 @@ func TestExecuteLogic_LinePowerIsOnAndBatteryChargedAndNasIsOff(t *testing.T) {
 func TestExecuteLogic_EverythingIsNormal(t *testing.T) {
 	// Given
 	tracker := &logic.Tracker{IsActive: false}
+	mockAckChannel := make(chan logic.PiMonitorAction)
 
 	// When
-	sleepTime := logic.ExecutePollingLogic(tracker, nil, nil, getMockBatteryPoller(false, 70))
+	sleepTime := logic.ExecutePollingLogic(tracker, nil, nil, getMockBatteryPoller(false, 70), mockAckChannel)
 
 	// Then
 	assert.Equal(t, 10*time.Second, sleepTime)
@@ -191,9 +197,10 @@ func TestExecuteLogic_BatteryPercentageBelow95AndGroup1IsNotOff(t *testing.T) {
 	// Given
 	mockNatsConn := getMockNatConn("group1")
 	tracker := &logic.Tracker{IsActive: true}
+	mockAckChannel := make(chan logic.PiMonitorAction)
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, mockNatsConn, nil, getMockBatteryPoller(true, 94))
+	logic.ExecutePollingLogic(tracker, mockNatsConn, nil, getMockBatteryPoller(true, 94), mockAckChannel)
 	
 	// Then
 	assert.True(t, tracker.Group1IsDeactivated)
@@ -204,9 +211,10 @@ func TestExecuteLogic_BatteryPercentageBelow95AndGroup1IsAlreadyOff(t *testing.T
 	// Given
 	mockNatsConn := &mockNatsConn{}
 	tracker := &logic.Tracker{IsActive: true, Group1IsDeactivated: true}
+	mockAckChannel := make(chan logic.PiMonitorAction)
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, mockNatsConn, nil, getMockBatteryPoller(true, 94))
+	logic.ExecutePollingLogic(tracker, mockNatsConn, nil, getMockBatteryPoller(true, 94), mockAckChannel)
 	
 	// Then
 	// Expect nothing to be called on the nats connection
@@ -217,9 +225,10 @@ func TestExecuteLogic_BatteryPercentageBelow85AndGroup2IsNotOff(t *testing.T) {
 	// Given
 	mockNatsConn := getMockNatConn("group2")
 	tracker := &logic.Tracker{IsActive: true, Group1IsDeactivated: true}
+	mockAckChannel := make(chan logic.PiMonitorAction)
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, mockNatsConn, nil, getMockBatteryPoller(true, 84))
+	logic.ExecutePollingLogic(tracker, mockNatsConn, nil, getMockBatteryPoller(true, 84), mockAckChannel)
 	
 	// Then
 	assert.True(t, tracker.Group2IsDeactivated)
@@ -230,9 +239,10 @@ func TestExecuteLogic_BatteryPercentageBelow85AndGroup2IsAlreadyOff(t *testing.T
 	// Given
 	mockNatsConn := &mockNatsConn{}
 	tracker := &logic.Tracker{IsActive: true, Group1IsDeactivated: true, Group2IsDeactivated: true}
+	mockAckChannel := make(chan logic.PiMonitorAction)
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, mockNatsConn, nil, getMockBatteryPoller(true, 84))
+	logic.ExecutePollingLogic(tracker, mockNatsConn, nil, getMockBatteryPoller(true, 84), mockAckChannel)
 	
 	// Then
 	// Expect nothing to be called on the nats connection
@@ -246,12 +256,22 @@ func TestExecuteLogic_BatteryPercentageBelow40AndGroup3IsNotOff(t *testing.T) {
 	mockNas := getMockDevice("nas", false, true, "TurnOff")
 	mockDevices := &logic.ManagedDevices{PiSwitch: mockPiSwitch, Nas: mockNas}
 	tracker := &logic.Tracker{IsActive: true, Group1IsDeactivated: true, Group2IsDeactivated: true}
+	mockAckChannel := make(chan logic.PiMonitorAction)
+	expectedAction := logic.PiMonitorAction{
+		EverythingShutDown: true,
+		Hostname: "",
+		Timestamp: 0,
+	}
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, mockNatsConn, mockDevices, getMockBatteryPoller(true, 39))
+	go logic.ExecutePollingLogic(tracker, mockNatsConn, mockDevices, getMockBatteryPoller(true, 39), mockAckChannel)
+	acks := <-mockAckChannel
 	
 	// Then
 	assert.True(t, tracker.Group3IsDeactivated)
+	assert.Equal(t, expectedAction.EverythingShutDown, acks.EverythingShutDown)
+	assert.Equal(t, expectedAction.Hostname, acks.Hostname)
+	assert.Greater(t, acks.Timestamp, expectedAction.Timestamp)
 	mockPiSwitch.AssertExpectations(t)
 	mockNas.AssertExpectations(t)
 }
@@ -263,9 +283,10 @@ func TestExecuteLogic_BatteryPercentageBelow40AndGroup3IsAlreadyOff(t *testing.T
 	mockNas := &mockDevice{}
 	mockDevices := &logic.ManagedDevices{PiSwitch: mockPiSwitch, Nas: mockNas}
 	tracker := &logic.Tracker{IsActive: true, Group1IsDeactivated: true, Group2IsDeactivated: true, Group3IsDeactivated: true}
+	mockAckChannel := make(chan logic.PiMonitorAction)
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, mockNatsConn, mockDevices, getMockBatteryPoller(true, 39))
+	logic.ExecutePollingLogic(tracker, mockNatsConn, mockDevices, getMockBatteryPoller(true, 39), mockAckChannel)
 	
 	// Then
 	mockPiSwitch.AssertExpectations(t)
@@ -278,9 +299,10 @@ func TestExecuteLogic_GettingBatteryStatusFailed(t *testing.T) {
 	mockBattery := &mockBatteryPoller{}
 	mockBattery.On("PollBatteryStatus").Return(battery.BatteryStatus{}, errors.New("error"))
 	tracker := &logic.Tracker{IsActive: true, Group1IsDeactivated: true, Group2IsDeactivated: true, Group3IsDeactivated: true}
+	mockAckChannel := make(chan logic.PiMonitorAction)
 	
 	// When, _
-	logic.ExecutePollingLogic(tracker, nil, nil, mockBattery)
+	logic.ExecutePollingLogic(tracker, nil, nil, mockBattery, mockAckChannel)
 	
 	// Then
 	assert.Equal(t, 1, tracker.BadBatteryStatusCount)
@@ -298,6 +320,7 @@ func FuzzExecuteLogic(f *testing.F) {
 	mockOnNas := getMockDevice("nas", false, true, "TurnOff")
 	// mockOffNas := getMockDevice("nas", true, false, "TurnOn")
 	mockDevices := &logic.ManagedDevices{PiSwitch: mockOnPiSwitch, Nas: mockOnNas}
+	mockAckChannel := make(chan logic.PiMonitorAction)
 	
 	f.Add(true, false, false, false, false, uint8(100))
 
@@ -321,6 +344,7 @@ func FuzzExecuteLogic(f *testing.F) {
 			mockNatsConn, 
 			mockDevices, 
 			mockBattery,
+			mockAckChannel,
 		)
 	})
 }

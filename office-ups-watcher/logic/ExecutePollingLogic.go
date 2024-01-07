@@ -38,7 +38,13 @@ type BatteryPoller interface {
 	PollBatteryStatus() (battery.BatteryStatus, error)
 }
 
-func ExecutePollingLogic(tracker *Tracker, nc NatsClient, devices *ManagedDevices, batteryPoller BatteryPoller) (time.Duration) {
+func ExecutePollingLogic(
+	tracker *Tracker, 
+	nc NatsClient, 
+	devices *ManagedDevices, 
+	batteryPoller BatteryPoller, 
+	actionFeed chan<- PiMonitorAction,
+) (time.Duration) {
 	batteryStatus, err := batteryPoller.PollBatteryStatus();
 	sleepTime := 10 * time.Second
 	if err != nil {
@@ -64,6 +70,11 @@ func ExecutePollingLogic(tracker *Tracker, nc NatsClient, devices *ManagedDevice
 			logger.Info("Deactivating group 3")
 			TurnOffDevice(devices.PiSwitch)
 			TurnOffDevice(devices.Nas)
+			actionFeed <- PiMonitorAction{
+				EverythingShutDown: true,
+				Hostname: "",
+				Timestamp: time.Now().Unix(),
+			}
 			tracker.Group3IsDeactivated = true
 		}
 	} else if tracker.IsActive && !batteryStatus.IsOnBattery && batteryStatus.Percent >= 95 {
