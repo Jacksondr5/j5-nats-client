@@ -1,6 +1,6 @@
 module github.com/jacksondr5/go-monorepo/office-ups-watcher
 
-go 1.20
+go 1.21.5
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

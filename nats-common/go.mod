@@ -1,6 +1,6 @@
 module github.com/jacksondr5/go-monorepo/nats-common
 
-go 1.20
+go 1.21.5
 
 require github.com/nats-io/nats.go v1.31.0
 

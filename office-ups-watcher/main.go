@@ -5,10 +5,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/jacksondr5/go-monorepo/logger"
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/battery"
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/call"
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/devices"
-	"github.com/jacksondr5/go-monorepo/office-ups-watcher/logger"
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/logic"
 	"github.com/nats-io/nats.go"
 )

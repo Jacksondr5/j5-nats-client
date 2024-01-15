@@ -3,8 +3,8 @@ package logic
 import (
 	"time"
 
+	"github.com/jacksondr5/go-monorepo/logger"
 	natscommon "github.com/jacksondr5/go-monorepo/nats-common"
-	"github.com/jacksondr5/go-monorepo/office-ups-watcher/logger"
 	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
 )
