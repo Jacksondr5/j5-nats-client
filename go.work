@@ -6,4 +6,5 @@ use (
 	./office-ups-watcher
 	./cert-rotater
 	./logger
+	./httpclient
 )

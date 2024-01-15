@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
+	httpclient "github.com/jacksondr5/go-monorepo/httpclient"
 	"github.com/jacksondr5/go-monorepo/logger"
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/battery"
-	"github.com/jacksondr5/go-monorepo/office-ups-watcher/call"
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/devices"
 	"github.com/jacksondr5/go-monorepo/office-ups-watcher/logic"
 	"github.com/nats-io/nats.go"
@@ -46,7 +46,7 @@ func main() {
 			"http://nas.j5/api/v2.0/system/shutdown", 
 			"", 
 			"",
-			call.HttpClientImpl{},
+			httpclient.HttpClientImpl{},
 		),
 		PiSwitch: devices.NewApiManagedDevice(
 			"Pi Switch", 
@@ -54,7 +54,7 @@ func main() {
 			"http://hass.j5:8123/api/services/switch/turn_off", 
 			"http://hass.j5:8123/api/services/switch/turn_on", 
 			"{\"entity_id\": \"switch.pi_switch_plug\"}",
-			call.HttpClientImpl{},
+			httpclient.HttpClientImpl{},
 		),
 	}
 
